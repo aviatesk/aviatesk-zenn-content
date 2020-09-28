@@ -2,7 +2,7 @@
 title: "Juliaの型推論について – isaで条件分岐したブロックにおける推論"
 emoji: "📚"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ["Julia", "動的型付け", "型推論", "type", "inference"]
+topics: ["Julia", "Julia言語", "型推論", "コンパイラ", "動的言語"]
 published: true
 ---
 
@@ -57,13 +57,13 @@ CodeInfo(
 [`code_typed`](https://docs.julialang.org/en/v1/base/base/#Base.code_typed)のキーワード引数として`optimize = false`として指定してあげると、型推論の後に行われる[inlining](https://en.wikipedia.org/wiki/Inline_expansion)や実行されない条件分岐先の削除など各種の最適化を行わないので、型推論の結果だけを見たい時などに便利です。
 :::
 
-このJuliaの型推論ルーチンの"flow-sensitivity"は、Juliaはある変数の型がプログラム中で変わったとしてもその変数のその文脈における型に応じた最適なコード生成を行ってくれたり、型不安定なコードを部分的に型安定にしてくれたりと、パフォーマンス上非常に重要です。例えば以下のようなコードを実行する場合、`foo`に渡される引数`a`は型不安定(`Union{Int,Char,String}`)ですが、それでも`foo`3行目の呼び出し`sin(a)`は`sin(a::Int)`としてコンパイル時に解決されます[^2]。
+このJuliaの型推論ルーチンのflow-sensitivityは、Juliaはある変数の型がプログラム中で変わったとしてもその変数のその文脈における型に応じた最適なコード生成を行ってくれたり、型不安定なコードを部分的に型安定にしてくれたりと、パフォーマンス上非常に重要です。例えば以下のようなコードを実行する場合、`foo`に渡される引数`a`は型不安定(`Union{Int,Char,String}`)ですが、それでも`foo`3行目の呼び出し`sin(a)`は`sin(a::Int)`としてコンパイル時に解決されます[^2]。
 ```julia
 let
     s = 0.
     for i in 1:100000
         a = rand((1, '1', "one"))
-        s += foo(a)
+        s += foo(a) # <= `a` is type-unstable here
     end
     s
 end
@@ -76,7 +76,7 @@ end
 
 > `foo`3行目の呼び出し`sin(a)`は`sin(a::Int)`としてコンパイル時に解決されます
 
-が起きていることを確認したい人は、[Cthulth.jl](https://github.com/JuliaDebug/Cthulhu.jl)というパッケージを使ってみましょう。
+が起きていることを確認したい人は、[Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl)というパッケージを使ってみましょう。
 
 optimize optionをoffにして、`%13  = invoke foo(::Union{Char, Int64, String})::Union{Float64, Int64}`に"descend"すると以下のような出力が得られ、期待通り`foo`内の`sin(a)`において`a`の型が`a::Int`と推論されているのが確認できます:
 ```julia
@@ -114,8 +114,79 @@ CodeInfo(
 )
 ...
 ```
+
+ただしこの型推論が実際のコード実行で使用されるかは、型推論後の最適化プロセスにおいて`foo`がinliningされるかどうかによって決まります:
+- inliningされる場合: `foo(::Union{Char, Int64, String})::Union{Float64, Int64}`の推論結果を用いて`foo`が元のコードにinline展開される
+- inliningされない場合: runtimeにおける`a`のそれぞれの具体型`T`に対して`foo(a::T)`に対するdynamic dispatchが行われるため、例えば`foo(::Int)::Float64`といったまた別のJIT compileが起きる(i.e. `foo(::Union{Char, Int64, String})::Union{Float64, Int64}`の推論結果は使用されない)
+
+今回の`foo`ではどうなるのか、`code_typed`の`optimize` optionを`true`(default)にして確認してみましょう:
+```julia
+julia> code_typed() do
+           s = 0.
+           for i in 1:100000
+               a = rand((1, '1', "one"))
+               s += foo(a)
+           end
+           s
+       end |> first
+CodeInfo(
+1 ──       goto #19 if not true
+2 ┄─ %2  = φ (#1 => 1, #18 => %45)::Int64
+│    %3  = φ (#1 => 0.0, #18 => %39)::Float64
+│    %4  = Core.tuple(1, '1', "one")::Core.Const((1, '1', "one"))
+│    %5  = $(Expr(:foreigncall, :(:jl_threadid), Int16, svec(), 0, :(:ccall)))::Int16
+│    %6  = Base.sext_int(Int64, %5)::Int64
+│    %7  = Base.add_int(%6, 1)::Int64
+│    %8  = invoke Random.default_rng(%7::Int64)::Random.MersenneTwister
+│    %9  = %new(Random.SamplerSimple{Tuple{Int64, Char, String}, Random.SamplerTrivial{Random.UInt52{UInt64}, UInt64}, Any}, %4, $(QuoteNode(Random.SamplerTrivial{Random.UInt52{UInt64}, UInt64}(Random.UInt52{UInt64}()))))::Random.SamplerSimple{Tuple{Int64, Char, String}, Random.SamplerTrivial{Random.UInt52{UInt64}, UInt64}, Any}
+│    %10 = invoke Random.rand(%8::Random.MersenneTwister, %9::Random.SamplerSimple{Tuple{Int64, Char, String}, Random.SamplerTrivial{Random.UInt52{UInt64}, UInt64}, Any})::Union{Char, Int64, String}
+│    %11 = (isa)(%10, Char)::Bool
+└───       goto #4 if not %11
+3 ──       goto #9
+4 ── %14 = (isa)(%10, Int64)::Bool
+└───       goto #6 if not %14
+5 ── %16 = π (%10, Int64)
+│    %17 = Base.sitofp(Float64, %16)::Float64
+│    %18 = invoke Base.Math.sin(%17::Float64)::Float64 # <= compiler inline-expanded `foo`
+└───       goto #9
+6 ── %20 = (isa)(%10, String)::Bool
+└───       goto #8 if not %20
+7 ──       goto #9
+8 ──       Core.throw(ErrorException("fatal error in type inference (type bound)"))::Union{}
+└───       unreachable
+9 ┄─ %25 = φ (#3 => 0, #5 => %18, #7 => 0)::Union{Float64, Int64}
+│    %26 = (isa)(%25, Float64)::Bool
+└───       goto #11 if not %26
+10 ─ %28 = π (%25, Float64)
+│    %29 = Base.add_float(%3, %28)::Float64
+└───       goto #14
+11 ─ %31 = (isa)(%25, Int64)::Bool
+└───       goto #13 if not %31
+12 ─ %33 = π (%25, Int64)
+│    %34 = Base.sitofp(Float64, %33)::Float64
+│    %35 = Base.add_float(%3, %34)::Float64
+└───       goto #14
+13 ─       Core.throw(ErrorException("fatal error in type inference (type bound)"))::Union{}
+└───       unreachable
+14 ┄ %39 = φ (#10 => %29, #12 => %35)::Float64
+│    %40 = (%2 === 100000)::Bool
+└───       goto #16 if not %40
+15 ─       goto #17
+16 ─ %43 = Base.add_int(%2, 1)::Int64
+└───       goto #17
+17 ┄ %45 = φ (#16 => %43)::Int64
+│    %46 = φ (#15 => true, #16 => false)::Bool
+│    %47 = Base.not_int(%46)::Bool
+└───       goto #19 if not %47
+18 ─       goto #2
+19 ┄ %50 = φ (#17 => %39, #1 => 0.0)::Float64
+└───       return %50
+) => Float64
+```
+やや見にくいですが、No.5 blockの`%19 = invoke Base.Math.sin(%18::Float64)::Float64`などの行を見れば`foo(::Union{Char, Int64, String})::Union{Float64, Int64}`が見事に消えてinline展開されていることが確認できると思います[^5]。
 :::
 
+[^5]: 逆にinlining _させない_ こともできます。[`@noinline`](https://docs.julialang.org/en/v1/base/base/#Base.@noinline)をつけて`foo`を再定義してから同じように`code_typed`を試してみてください。
 
 ## 2. `isa` conditionのflow-sensitivity
 
