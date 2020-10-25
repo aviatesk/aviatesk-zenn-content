@@ -227,9 +227,9 @@ show(io::IO, ::TopElement) = print(io, '⊤')
 show(io::IO, ::BotElement) = print(io, '⊥')
 
 ≤(x::LatticeElement, y::LatticeElement) = x≡y
-≤(::BotElement,      ::TopElement) = true
-≤(::BotElement,      ::LatticeElement) = true
-≤(::LatticeElement,  ::TopElement) = true
+≤(::BotElement,      ::TopElement)      = true
+≤(::BotElement,      ::LatticeElement)  = true
+≤(::LatticeElement,  ::TopElement)      = true
 
 # NOTE: == and < are defined such that future LatticeElements only need to implement ≤
 ==(x::LatticeElement, y::LatticeElement) = x≤y && y≤x
