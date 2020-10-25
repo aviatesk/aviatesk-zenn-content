@@ -5,6 +5,7 @@ type: "tech"
 topics: ["Julia", "抽象解釈", "コンパイラ最適化", "型推論"]
 published: true
 weave_options:
+    mod: Main
     doctype: github
 ---
 
@@ -706,9 +707,9 @@ function smerge(sa::Union{NotFound,VarState}, sb::Union{NotFound,VarState})
 end
 ```
 
-やや複雑ですが、基本的には`tmerge`が更新を引き受けているようです。`tmerge`はより複雑なのでここで紹介はしませんが、$\sqcup$(meet)に相当する演算を行うgeneric functionです。
+やや複雑ですが、基本的には`tmerge`が更新を引き受けているようです。[`tmerge`はより複雑](https://github.com/JuliaLang/julia/blob/d474c98667db0bf4832e4eeb7beb0e8cfc8b7481/base/compiler/typelimits.jl#L284-L448)なのでここで紹介はしませんが、$\sqcup$(meet)に相当する演算を行うgeneric functionです。
 
-Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂上とし、下に行けば行くほど具体的な抽象値[^5] になるようなlatticeに対して動作し、状態がlatticeの底から上に登るように更新されていくので[^6] 、この記事で実装したconstant folding propagation problemが使用する$\sqcap$ではなく、$\sqcap$と対をなす演算$\sqcup$を用いているというわけです。
+なぜ$\sqcap$ではなく$\sqcup$なのでしょうか。Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂上とし下に行けば行くほど具体的な抽象値[^5] になるようなlatticeに対して動作し、状態がlatticeの底から上に登るように更新されていくので[^6] 、この記事で実装したconstant folding propagation problemとは逆方向に状態を遷移させていきます。そのため$\sqcap$ではなく、$\sqcap$と対をなす演算$\sqcup$を用いているというわけです。
 
 [^5]: つまりJuliaの型推論のlatticeの順序関係としては、例えば、`⊥(Bottom) ⊑ Const(1) ⊑ Int ⊑ Union{String,Int} ⊑ ⊤(Any)`というようになります。
 
@@ -726,5 +727,5 @@ Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂�
 
 ## ノート
 
-- この記事の本体及び使用したコードは[https://github.com/aviatesk/aviatesk-zenn-content](https://github.com/aviatesk/aviatesk-zenn-content)で公開しています。タイポなど見つけた際は是非この記事へコメントあるいはrepositoryの方へPRをいただけると嬉しいです。
-- この記事は僕がメンテナをしているJuliaのliterate programming package [Weave.jl](http://weavejl.mpastell.com/dev/)を用いて、`.jmd`ファイルから[zenn](https://zenn.dev/)でpublishする用のmarkdownを生成しています。今後zennでJuliaに関する記事を掲載しようとしている方の参考になるかも知れません.
+- この記事の本体及び使用したコードは[https://github.com/aviatesk/aviatesk-zenn-content](https://github.com/aviatesk/aviatesk-zenn-content)で公開しています。タイポや誤りなど見つけた際は是非この記事へコメントあるいはrepositoryの方へissue/PRをいただけると嬉しいです。
+- この記事は僕がメンテナをしているJuliaのliterate programming package [Weave.jl](http://weavejl.mpastell.com/dev/)を用いて、[`.jmd`ファイル](https://github.com/aviatesk/aviatesk-zenn-content/blob/master/articles/data-flow-problem-20201025.jmd)から[zennでpublishする用のmarkdown](https://github.com/aviatesk/aviatesk-zenn-content/blob/master/articles/data-flow-problem-20201025.md)を生成しています。今後[zenn](https://zenn.dev/)でJuliaに関する記事を掲載しようとしている方の参考になるかも知れません.

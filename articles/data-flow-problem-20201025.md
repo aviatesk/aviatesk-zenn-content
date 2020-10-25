@@ -243,7 +243,7 @@ show(io::IO, ::BotElement) = print(io, '⊥')
 ```
 
 ```
-⊓ (generic function with 2 methods)
+⊓ (generic function with 1 method)
 ```
 
 
@@ -266,7 +266,7 @@ const AbstractState = Dict{Symbol,LatticeElement}
 ```
 
 ```
-< (generic function with 91 methods)
+< (generic function with 85 methods)
 ```
 
 
@@ -360,8 +360,8 @@ prog0 = [Assign(Sym(:x), Num(1)),                              # I₀
 
 
 
-ちょっと醜いですね。
-ここでは、Juliaの強力なメタプログラミング機能を用いて、Juliaのsyntaxから今回ターゲットとするinstruction levelのプログラム$P$を生成するマクロ`@prog`を記述しましょう[^2]。
+ちょっと見辛いですね。
+そこで、Juliaの強力なメタプログラミング機能を用いて、Juliaのsyntaxから今回ターゲットとするinstruction levelのプログラム$P$を生成するマクロ`@prog`を記述しましょう[^2]。
 [surface syntax AST](https://docs.julialang.org/en/v1/devdocs/ast/#Surface-syntax-AST)に対するpattern-matchingを行えるパッケージ[MacroTools.jl](https://github.com/FluxML/MacroTools.jl)を使います:
 ```julia
 using MacroTools
@@ -538,7 +538,7 @@ max_fixed_point(prog0, a₀, abstract_eval)
 
 これらをコードに落とし込むと次のようになります:
 1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceをそのまま用いる
-2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、更新後の状態が更新前の状態よりも常に$L$において低い位置にいくようにする
+2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、常に更新後の状態が更新前の状態よりも$L$において低い位置にいくようにする
 
 というわけで`max_fixed_point`に以下のdiffをあてましょう:
 ```diff
@@ -646,7 +646,7 @@ Hooray ! 見事、$I_8$の状態$s_8$に該当する`Dict(:y => Const(2), :z => 
 - part 1. 推論フレームのスコープ内でローカルに行う推論
 - part 2. 関数呼び出しを跨いで行う推論
 
-part 1.がJuliaの型推論プロセスのコアとなるルーチンで、“A Graph-Free Approach to Data-Flow Analysis.”で提唱されたアルゴリズムをベースとしています。part 2.でそのアルゴリズムを相互再帰呼び出しも扱えるように拡張しており、そちらの詳細についてはJuliaのcreatorの1人であるJeff Bezansonさんの[Ph.D thesis](https://www.google.com/search?sxsrf=ALeKk01fOq5mwVrfsuot9PCCOyRizbIqQg%3A1602874648121&ei=GO2JX4z7BqrfmAXU35SQCA&q=jeff+bezanson+phd+thesis&oq=jeff+bezanson+phd+thesis&gs_lcp=CgZwc3ktYWIQAzoECCMQJzoFCC4QyQM6BggAEBYQHjoFCCEQoAE6BAghEBU6CAghEBYQHRAeULhEWLhqYP5raAJwAHgAgAG7AYgB-hKSAQQwLjE2mAEAoAEBqgEHZ3dzLXdpesABAQ&sclient=psy-ab&ved=0ahUKEwiM55Sw5bnsAhWqL6YKHdQvBYIQ4dUDCA0&uact=5)が詳しいですが、この記事では触れません。
+part 1.がJuliaの型推論プロセスのコアとなるルーチンで、この記事で紹介している[“A Graph-Free Approach to Data-Flow Analysis.”](https://www.semanticscholar.org/paper/A-Graph-Free-Approach-to-Data-Flow-Analysis-Mohnen/5ad8cb6b477793ffb5ec29dde89df6b82dbb6dba?p2df)で提唱されたアルゴリズムをベースとしています。part 2.でそのアルゴリズムを相互再帰呼び出しも扱えるように拡張しており、そちらの詳細についてはJuliaのcreatorの1人であるJeff Bezansonさんの[Ph.D thesis](https://www.google.com/search?sxsrf=ALeKk01fOq5mwVrfsuot9PCCOyRizbIqQg%3A1602874648121&ei=GO2JX4z7BqrfmAXU35SQCA&q=jeff+bezanson+phd+thesis&oq=jeff+bezanson+phd+thesis&gs_lcp=CgZwc3ktYWIQAzoECCMQJzoFCC4QyQM6BggAEBYQHjoFCCEQoAE6BAghEBU6CAghEBYQHRAeULhEWLhqYP5raAJwAHgAgAG7AYgB-hKSAQQwLjE2mAEAoAEBqgEHZ3dzLXdpesABAQ&sclient=psy-ab&ved=0ahUKEwiM55Sw5bnsAhWqL6YKHdQvBYIQ4dUDCA0&uact=5)が詳しいですが、この記事では触れません。
 
 となると、Juliaの型推論ルーチンがこの記事と同様に元論文のアルゴリズムを修正しているのかどうか、`prog0`に対して正しく動くのかどうか気になるところです。
 
@@ -710,42 +710,42 @@ end
 ```
 quote
     begin
-        $(Expr(:symboliclabel, Symbol("#3776###label0#3208")))
-        var"#3788#x" = 1
+        $(Expr(:symboliclabel, Symbol("#204###label0#249")))
+        var"#216#x" = 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3777###label1#3209")))
-        var"#3785#y" = 2
+        $(Expr(:symboliclabel, Symbol("#205###label1#250")))
+        var"#213#y" = 2
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3778###label2#3210")))
-        var"#3786#z" = 3
+        $(Expr(:symboliclabel, Symbol("#206###label2#251")))
+        var"#214#z" = 3
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3779###label3#3211")))
-        $(Expr(:symbolicgoto, Symbol("#3780###label8#3216")))
+        $(Expr(:symboliclabel, Symbol("#207###label3#252")))
+        $(Expr(:symbolicgoto, Symbol("#208###label8#257")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3781###label4#3212")))
-        var"#3787#r" = var"#3785#y" + var"#3786#z"
+        $(Expr(:symboliclabel, Symbol("#209###label4#253")))
+        var"#215#r" = var"#213#y" + var"#214#z"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3782###label5#3213")))
-        var"#3788#x" ≤ var"#3786#z" && $(Expr(:symbolicgoto, Symbol("#3783#
-##label7#3215")))
+        $(Expr(:symboliclabel, Symbol("#210###label5#254")))
+        var"#216#x" ≤ var"#214#z" && $(Expr(:symbolicgoto, Symbol("#211###l
+abel7#256")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3784###label6#3214")))
-        var"#3787#r" = var"#3786#z" + var"#3785#y"
+        $(Expr(:symboliclabel, Symbol("#212###label6#255")))
+        var"#215#r" = var"#214#z" + var"#213#y"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3783###label7#3215")))
-        var"#3788#x" = var"#3788#x" + 1
+        $(Expr(:symboliclabel, Symbol("#211###label7#256")))
+        var"#216#x" = var"#216#x" + 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3780###label8#3216")))
-        var"#3788#x" < 10 && $(Expr(:symbolicgoto, Symbol("#3781###label4#3
-212")))
+        $(Expr(:symboliclabel, Symbol("#208###label8#257")))
+        var"#216#x" < 10 && $(Expr(:symbolicgoto, Symbol("#209###label4#253
+")))
     end
 end
 ```
@@ -927,9 +927,9 @@ end
 
 
 
-やや複雑ですが、基本的には`tmerge`が更新を引き受けているようです。`tmerge`はより複雑なのでここで紹介はしませんが、$\sqcup$(meet)に相当する演算を行うgeneric functionです。
+やや複雑ですが、基本的には`tmerge`が更新を引き受けているようです。[`tmerge`はより複雑](https://github.com/JuliaLang/julia/blob/d474c98667db0bf4832e4eeb7beb0e8cfc8b7481/base/compiler/typelimits.jl#L284-L448)なのでここで紹介はしませんが、$\sqcup$(meet)に相当する演算を行うgeneric functionです。
 
-Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂上とし、下に行けば行くほど具体的な抽象値[^5] になるようなlatticeに対して動作し、状態がlatticeの底から上に登るように更新されていくので[^6] 、この記事で実装したconstant folding propagation problemが使用する$\sqcap$ではなく、$\sqcap$と対をなす演算$\sqcup$を用いているというわけです。
+なぜ$\sqcap$ではなく$\sqcup$なのでしょうか。Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂上とし下に行けば行くほど具体的な抽象値[^5] になるようなlatticeに対して動作し、状態がlatticeの底から上に登るように更新されていくので[^6] 、この記事で実装したconstant folding propagation problemとは逆方向に状態を遷移させていきます。そのため$\sqcap$ではなく、$\sqcap$と対をなす演算$\sqcup$を用いているというわけです。
 
 [^5]: つまりJuliaの型推論のlatticeの順序関係としては、例えば、`⊥(Bottom) ⊑ Const(1) ⊑ Int ⊑ Union{String,Int} ⊑ ⊤(Any)`というようになります。
 
@@ -947,5 +947,5 @@ Juliaの型推論ルーチンは最も抽象的な抽象値である`Any`を頂�
 
 ## ノート
 
-- この記事の本体及び使用したコードは[https://github.com/aviatesk/aviatesk-zenn-content](https://github.com/aviatesk/aviatesk-zenn-content)で公開しています。タイポなど見つけた際は是非この記事へコメントあるいはrepositoryの方へPRをいただけると嬉しいです。
-- この記事は僕がメンテナをしているJuliaのliterate programming package [Weave.jl](http://weavejl.mpastell.com/dev/)を用いて、`.jmd`ファイルから[zenn](https://zenn.dev/)でpublishする用のmarkdownを生成しています。今後zennでJuliaに関する記事を掲載しようとしている方の参考になるかも知れません.
+- この記事の本体及び使用したコードは[https://github.com/aviatesk/aviatesk-zenn-content](https://github.com/aviatesk/aviatesk-zenn-content)で公開しています。タイポや誤りなど見つけた際は是非この記事へコメントあるいはrepositoryの方へissue/PRをいただけると嬉しいです。
+- この記事は僕がメンテナをしているJuliaのliterate programming package [Weave.jl](http://weavejl.mpastell.com/dev/)を用いて、[`.jmd`ファイル](https://github.com/aviatesk/aviatesk-zenn-content/blob/master/articles/data-flow-problem-20201025.jmd)から[zennでpublishする用のmarkdown](https://github.com/aviatesk/aviatesk-zenn-content/blob/master/articles/data-flow-problem-20201025.md)を生成しています。今後[zenn](https://zenn.dev/)でJuliaに関する記事を掲載しようとしている方の参考になるかも知れません.
