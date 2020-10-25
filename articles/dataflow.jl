@@ -124,6 +124,49 @@ a₀ = AbstractState(:x => ⊤, :y => ⊤, :z => ⊤, :r => ⊤)
 # algorithm
 # ---------
 
+# original, wrong version
+function max_fixed_point(prog::Program, a₀::AbstractState, eval)
+    n = length(prog)
+    init = AbstractState( v => ⊤ for v in keys(a₀) )
+    s = [ a₀; [ init for i = 2:n ] ]
+    W = BitSet(0:n-1)
+
+    while !isempty(W)
+        pc = first(W)
+        while pc ≠ n
+            delete!(W, pc)
+            I = prog[pc+1]
+            new = s[pc+1]
+            if isa(I, Assign)
+                # for an assignment, outgoing value is different from incoming
+                new = copy(new)
+                new[I.lhs.name] = eval(I.rhs, new)
+            end
+
+            if isa(I, Goto)
+                pc´ = I.label
+            else
+                pc´ = pc+1
+                if isa(I, GotoIf)
+                    l = I.label
+                    if new < s[l+1]
+                        push!(W, l)
+                        s[l+1] = new
+                    end
+                end
+            end
+            if pc´≤n-1 && new < s[pc´+1]
+                s[pc´+1] = new
+                pc = pc´
+            else
+                pc = n
+            end
+        end
+    end
+
+    return s
+end
+
 # NOTE: in this problem, we make sure that states will always move to _lower_ position in lattice, so
 # - initialize states with `⊤`
 # - we use `⊓` (meet) operator to update states,
@@ -152,17 +195,25 @@ function max_fixed_point(prog::Program, a₀::AbstractState, eval)
                 pc´ = pc+1
                 if isa(I, GotoIf)
                     l = I.label
+                    if new ≠ s[l+1]
+                        push!(W, l)
+                        s[l+1] = new ⊓ s[l+1]
+                    end
+                    # # alternatively,
                     # new = new ⊓ s[l]
                     # if new < s[l]
                     #     push!(W, l)
                     #     s[l] = new
                     # end
-                    if new ≠ s[l+1]
-                        push!(W, l)
-                        s[l+1] = new ⊓ s[l+1]
-                    end
                 end
             end
+            if pc´≤n-1 && new ≠ s[pc´+1]
+                s[pc´+1] = new ⊓ s[pc´+1]
+                pc = pc´
+            else
+                pc = n
+            end
+            # # alternatively,
             # pc´≤n && (new = new ⊓ s[pc´])
             # if pc´≤n && new < s[pc´]
             #     s[pc´] = new
@@ -170,12 +221,6 @@ function max_fixed_point(prog::Program, a₀::AbstractState, eval)
             # else
             #     pc = n+1
             # end
-            if pc´≤n-1 && new ≠ s[pc´+1]
-                s[pc´+1] = new ⊓ s[pc´+1]
-                pc = pc´
-            else
-                pc = n
-            end
         end
     end
 
