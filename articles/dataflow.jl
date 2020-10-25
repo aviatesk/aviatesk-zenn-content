@@ -2,6 +2,7 @@
 "A Graph-Free Approach to Data-Flow Analysis" implementation – constant folding propagation example
 
 xref: https://www.semanticscholar.org/paper/A-Graph-Free-Approach-to-Data-Flow-Analysis-Mohnen/5ad8cb6b477793ffb5ec29dde89df6b82dbb6dba?p2df
+NOTE: the code is originally adapted from https://github.com/JeffBezanson/dataflow.jl/blob/master/dataflow.jl
 =#
 
 # implementation
