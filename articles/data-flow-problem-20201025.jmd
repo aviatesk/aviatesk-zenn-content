@@ -1,9 +1,9 @@
 ---
 title: "Juliaの型推論アルゴリズムを実装する"
-emoji: "𝕮"
+emoji: "✈"
 type: "tech"
 topics: ["Julia", "抽象解釈", "コンパイラ最適化", "型推論"]
-published: false
+published: true
 weave_options:
     doctype: github
 ---

@@ -1,5 +1,5 @@
 ---
-emoji: "𝕮"
+emoji: "✈"
 title: "Juliaの型推論アルゴリズムを実装する"
 topics:
   - "Julia"
@@ -7,7 +7,7 @@ topics:
   - "コンパイラ最適化"
   - "型推論"
 type: "tech"
-published: false
+published: true
 ---
 
 
@@ -710,42 +710,42 @@ end
 ```
 quote
     begin
-        $(Expr(:symboliclabel, Symbol("#3638###label0#3092")))
-        var"#3650#x" = 1
+        $(Expr(:symboliclabel, Symbol("#3707###label0#3150")))
+        var"#3719#x" = 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3639###label1#3093")))
-        var"#3647#y" = 2
+        $(Expr(:symboliclabel, Symbol("#3708###label1#3151")))
+        var"#3716#y" = 2
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3640###label2#3094")))
-        var"#3648#z" = 3
+        $(Expr(:symboliclabel, Symbol("#3709###label2#3152")))
+        var"#3717#z" = 3
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3641###label3#3095")))
-        $(Expr(:symbolicgoto, Symbol("#3642###label8#3100")))
+        $(Expr(:symboliclabel, Symbol("#3710###label3#3153")))
+        $(Expr(:symbolicgoto, Symbol("#3711###label8#3158")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3643###label4#3096")))
-        var"#3649#r" = var"#3647#y" + var"#3648#z"
+        $(Expr(:symboliclabel, Symbol("#3712###label4#3154")))
+        var"#3718#r" = var"#3716#y" + var"#3717#z"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3644###label5#3097")))
-        var"#3650#x" ≤ var"#3648#z" && $(Expr(:symbolicgoto, Symbol("#3645#
-##label7#3099")))
+        $(Expr(:symboliclabel, Symbol("#3713###label5#3155")))
+        var"#3719#x" ≤ var"#3717#z" && $(Expr(:symbolicgoto, Symbol("#3714#
+##label7#3157")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3646###label6#3098")))
-        var"#3649#r" = var"#3648#z" + var"#3647#y"
+        $(Expr(:symboliclabel, Symbol("#3715###label6#3156")))
+        var"#3718#r" = var"#3717#z" + var"#3716#y"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3645###label7#3099")))
-        var"#3650#x" = var"#3650#x" + 1
+        $(Expr(:symboliclabel, Symbol("#3714###label7#3157")))
+        var"#3719#x" = var"#3719#x" + 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3642###label8#3100")))
-        var"#3650#x" < 10 && $(Expr(:symbolicgoto, Symbol("#3643###label4#3
-096")))
+        $(Expr(:symboliclabel, Symbol("#3711###label8#3158")))
+        var"#3719#x" < 10 && $(Expr(:symbolicgoto, Symbol("#3712###label4#3
+154")))
     end
 end
 ```
