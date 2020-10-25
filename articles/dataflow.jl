@@ -306,43 +306,43 @@ macro prog′(blk)
 end
 
 @macroexpand @prog′ begin
-    x = 1
-    y = 2
-    z = 3
-    @goto 8
-    r = y + z
-    x ≤ z && @goto 7
-    r = z + y
-    x = x + 1
-    x < 10 && @goto 4
+    x = 1             # I₀
+    y = 2             # I₁
+    z = 3             # I₂
+    @goto 8           # I₃
+    r = y + z         # I₄
+    x ≤ z && @goto 7  # I₅
+    r = z + y         # I₆
+    x = x + 1         # I₇
+    x < 10 && @goto 4 # I₈
 end
 
 code_typed(; optimize = false) do
     @prog′ begin
-        x = 1
-        y = 2
-        z = 3
-        @goto 8
-        r = y + z
-        x ≤ z && @goto 7
-        r = z + y
-        x = x + 1
-        x < 10 && @goto 4
+        x = 1             # I₀
+        y = 2             # I₁
+        z = 3             # I₂
+        @goto 8           # I₃
+        r = y + z         # I₄
+        x ≤ z && @goto 7  # I₅
+        r = z + y         # I₆
+        x = x + 1         # I₇
+        x < 10 && @goto 4 # I₈
 
         x, y, z, r # to check the result of abstract interpretation
     end
 end |> first
 
 @prog′ begin
-    x = 1
-    y = 2
-    z = 3
-    @goto 8
-    r = y + z
-    x ≤ z && @goto 7
-    r = z + y
-    x = x + 1
-    x < 10 && @goto 4
+    x = 1             # I₀
+    y = 2             # I₁
+    z = 3             # I₂
+    @goto 8           # I₃
+    r = y + z         # I₄
+    x ≤ z && @goto 7  # I₅
+    r = z + y         # I₆
+    x = x + 1         # I₇
+    x < 10 && @goto 4 # I₈
 
     x, y, z, r # to check the result of actual execution
 end
