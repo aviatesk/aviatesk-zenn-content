@@ -296,8 +296,8 @@ prog0 = [Assign(Sym(:x), Num(1)),                              # I₀
          ]::Program
 ```
 
-ちょっと醜いですね。
-ここでは、Juliaの強力なメタプログラミング機能を用いて、Juliaのsyntaxから今回ターゲットとするinstruction levelのプログラム$P$を生成するマクロ`@prog`を記述しましょう[^2]。
+ちょっと見辛いですね。
+そこで、Juliaの強力なメタプログラミング機能を用いて、Juliaのsyntaxから今回ターゲットとするinstruction levelのプログラム$P$を生成するマクロ`@prog`を記述しましょう[^2]。
 [surface syntax AST](https://docs.julialang.org/en/v1/devdocs/ast/#Surface-syntax-AST)に対するpattern-matchingを行えるパッケージ[MacroTools.jl](https://github.com/FluxML/MacroTools.jl)を使います:
 ```julia
 using MacroTools
@@ -424,7 +424,7 @@ max_fixed_point(prog0, a₀, abstract_eval)
 
 これらをコードに落とし込むと次のようになります:
 1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceをそのまま用いる
-2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、更新後の状態が更新前の状態よりも常に$L$において低い位置にいくようにする
+2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、常に更新後の状態が更新前の状態よりも$L$において低い位置にいくようにする
 
 というわけで`max_fixed_point`に以下のdiffをあてましょう:
 ```diff
@@ -515,7 +515,7 @@ Hooray ! 見事、$I_8$の状態$s_8$に該当する`Dict(:y => Const(2), :z => 
 - part 1. 推論フレームのスコープ内でローカルに行う推論
 - part 2. 関数呼び出しを跨いで行う推論
 
-part 1.がJuliaの型推論プロセスのコアとなるルーチンで、“A Graph-Free Approach to Data-Flow Analysis.”で提唱されたアルゴリズムをベースとしています。part 2.でそのアルゴリズムを相互再帰呼び出しも扱えるように拡張しており、そちらの詳細についてはJuliaのcreatorの1人であるJeff Bezansonさんの[Ph.D thesis](https://www.google.com/search?sxsrf=ALeKk01fOq5mwVrfsuot9PCCOyRizbIqQg%3A1602874648121&ei=GO2JX4z7BqrfmAXU35SQCA&q=jeff+bezanson+phd+thesis&oq=jeff+bezanson+phd+thesis&gs_lcp=CgZwc3ktYWIQAzoECCMQJzoFCC4QyQM6BggAEBYQHjoFCCEQoAE6BAghEBU6CAghEBYQHRAeULhEWLhqYP5raAJwAHgAgAG7AYgB-hKSAQQwLjE2mAEAoAEBqgEHZ3dzLXdpesABAQ&sclient=psy-ab&ved=0ahUKEwiM55Sw5bnsAhWqL6YKHdQvBYIQ4dUDCA0&uact=5)が詳しいですが、この記事では触れません。
+part 1.がJuliaの型推論プロセスのコアとなるルーチンで、この記事で紹介している[“A Graph-Free Approach to Data-Flow Analysis.”](https://www.semanticscholar.org/paper/A-Graph-Free-Approach-to-Data-Flow-Analysis-Mohnen/5ad8cb6b477793ffb5ec29dde89df6b82dbb6dba?p2df)で提唱されたアルゴリズムをベースとしています。part 2.でそのアルゴリズムを相互再帰呼び出しも扱えるように拡張しており、そちらの詳細についてはJuliaのcreatorの1人であるJeff Bezansonさんの[Ph.D thesis](https://www.google.com/search?sxsrf=ALeKk01fOq5mwVrfsuot9PCCOyRizbIqQg%3A1602874648121&ei=GO2JX4z7BqrfmAXU35SQCA&q=jeff+bezanson+phd+thesis&oq=jeff+bezanson+phd+thesis&gs_lcp=CgZwc3ktYWIQAzoECCMQJzoFCC4QyQM6BggAEBYQHjoFCCEQoAE6BAghEBU6CAghEBYQHRAeULhEWLhqYP5raAJwAHgAgAG7AYgB-hKSAQQwLjE2mAEAoAEBqgEHZ3dzLXdpesABAQ&sclient=psy-ab&ved=0ahUKEwiM55Sw5bnsAhWqL6YKHdQvBYIQ4dUDCA0&uact=5)が詳しいですが、この記事では触れません。
 
 となると、Juliaの型推論ルーチンがこの記事と同様に元論文のアルゴリズムを修正しているのかどうか、`prog0`に対して正しく動くのかどうか気になるところです。
 
