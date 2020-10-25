@@ -31,7 +31,7 @@ published: true
 - $A$: プログラムの抽象状態を表現する集合[^1]
 - $\sqcup, \sqcap$: それぞれjoinとmeet[^0]に対応する演算で、$A$に対して作用する
 
-[^0]: [lattice](https://en.wikipedia.org/wiki/Lattice_(order)) [join and meet](https://en.wikipedia.org/wiki/Join_and_meet))
+[^0]: lattice: https://en.wikipedia.org/wiki/Lattice_(order) / join and meet: https://en.wikipedia.org/wiki/Join_and_meet
 
 [^1]: 論文では記号として[Unicode Character “𝕮” (U+1D56E)](https://www.compart.com/en/unicode/U+1D56E)が用いられていますが、このフォントがKaTeXでサポートされていないのでこの記事では$A$を用います。
 
@@ -710,42 +710,42 @@ end
 ```
 quote
     begin
-        $(Expr(:symboliclabel, Symbol("#3707###label0#3150")))
-        var"#3719#x" = 1
+        $(Expr(:symboliclabel, Symbol("#3776###label0#3208")))
+        var"#3788#x" = 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3708###label1#3151")))
-        var"#3716#y" = 2
+        $(Expr(:symboliclabel, Symbol("#3777###label1#3209")))
+        var"#3785#y" = 2
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3709###label2#3152")))
-        var"#3717#z" = 3
+        $(Expr(:symboliclabel, Symbol("#3778###label2#3210")))
+        var"#3786#z" = 3
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3710###label3#3153")))
-        $(Expr(:symbolicgoto, Symbol("#3711###label8#3158")))
+        $(Expr(:symboliclabel, Symbol("#3779###label3#3211")))
+        $(Expr(:symbolicgoto, Symbol("#3780###label8#3216")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3712###label4#3154")))
-        var"#3718#r" = var"#3716#y" + var"#3717#z"
+        $(Expr(:symboliclabel, Symbol("#3781###label4#3212")))
+        var"#3787#r" = var"#3785#y" + var"#3786#z"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3713###label5#3155")))
-        var"#3719#x" ≤ var"#3717#z" && $(Expr(:symbolicgoto, Symbol("#3714#
-##label7#3157")))
+        $(Expr(:symboliclabel, Symbol("#3782###label5#3213")))
+        var"#3788#x" ≤ var"#3786#z" && $(Expr(:symbolicgoto, Symbol("#3783#
+##label7#3215")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3715###label6#3156")))
-        var"#3718#r" = var"#3717#z" + var"#3716#y"
+        $(Expr(:symboliclabel, Symbol("#3784###label6#3214")))
+        var"#3787#r" = var"#3786#z" + var"#3785#y"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3714###label7#3157")))
-        var"#3719#x" = var"#3719#x" + 1
+        $(Expr(:symboliclabel, Symbol("#3783###label7#3215")))
+        var"#3788#x" = var"#3788#x" + 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#3711###label8#3158")))
-        var"#3719#x" < 10 && $(Expr(:symbolicgoto, Symbol("#3712###label4#3
-154")))
+        $(Expr(:symboliclabel, Symbol("#3780###label8#3216")))
+        var"#3788#x" < 10 && $(Expr(:symbolicgoto, Symbol("#3781###label4#3
+212")))
     end
 end
 ```

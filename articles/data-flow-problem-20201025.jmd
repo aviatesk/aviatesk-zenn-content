@@ -28,7 +28,7 @@ weave_options:
 - $A$: プログラムの抽象状態を表現する集合[^1]
 - $\sqcup, \sqcap$: それぞれjoinとmeet[^0]に対応する演算で、$A$に対して作用する
 
-[^0]: [lattice](https://en.wikipedia.org/wiki/Lattice_(order)) [join and meet](https://en.wikipedia.org/wiki/Join_and_meet))
+[^0]: lattice: https://en.wikipedia.org/wiki/Lattice_(order) / join and meet: https://en.wikipedia.org/wiki/Join_and_meet
 
 [^1]: 論文では記号として[Unicode Character “𝕮” (U+1D56E)](https://www.compart.com/en/unicode/U+1D56E)が用いられていますが、このフォントがKaTeXでサポートされていないのでこの記事では$A$を用います。
 
