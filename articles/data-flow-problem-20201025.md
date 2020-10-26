@@ -23,7 +23,7 @@ published: true
 ["a data-flow problem"(抽象解釈問題)](https://dl.acm.org/doi/10.1145/512950.512973)は以下の4つの要素を用いて定義します:
 1. **$P = I_0 ... I_n \in \text{Instr}$**: プログラム
 2. **$L = <A, \sqcup, \sqcap>$**: $P$が取りうる抽象値のlattice[^0]
-3. **$![.!] : \text{Instr} \rightarrow (A \rightarrow A)$**: instruction $\text{Instr}$がプログラムの抽象状態$A$に対してどのように作用するのかを与えるプログラムの抽象的な意味論
+3. **$![.!] : \text{Instr} \rightarrow (A \rightarrow A)$**: instruction $\text{Instr}$がプログラムの抽象状態$A$に対してどのように作用するのかを与えるプログラムの抽象的な意味論("abstract semantics")
 4. **$a_0 \in A$**: プログラムの初期状態
 
 ここで:
@@ -90,7 +90,7 @@ $A$に対する$\sqcup, \sqcap$演算は、$A$中の変数のそれぞれの抽�
 
 #### 問題設定 3. abstract semantics $![.!]$
 
-プログラム$P$の抽象的な意味論$![.!]$を考えましょう:
+プログラム$P$のabstract semantics $![.!]$を考えましょう:
 - conditional branching (`condition && goto instruction`): 抽象状態$A$を変化させない
 - unconditional branching (`goto instruction`): 抽象状態$A$を変化させない
 - assignment: `lhs := rhs`: `rhs`が定数である時のみその定数値を`lhs`に代入、それ以外の時は$\bot$を代入
@@ -100,7 +100,7 @@ $A$に対する$\sqcup, \sqcap$演算は、$A$中の変数のそれぞれの抽�
 論文ではプログラムの初期状態$a_0$を$\bot$で初期化するとしていますが、おそらく間違いです。直観的な意味からも、プログラムの初期状態では各変数は"non constant due to missing information"と解釈されるべきなので、$\top$で初期化されるべきでしょう:
 
 $$
-    a_0 = X \rightarrow \top
+    a_0 := X \rightarrow \top
 $$
 
 ### アルゴリズム
@@ -116,7 +116,7 @@ $$
 2. 現在のinstruction$I$の抽象状態の変化は、$I$が到達する可能性があるinstruction全てに伝播する
 3. ただし、現在のinstruction$I$の抽象状態の変化は、**伝播する先の抽象状態を変化させる場合にのみ**伝播する
 
-3.はアルゴリズム中の$I_{pc} = (\text{if} \psi \text{goto} l)$の箇所に相当します。これはつまり、このアルゴリズムは、実際のプログラム実行とは違い、条件分岐の分岐先について両方の分岐を勘定するということです。
+3.はアルゴリズム中の$I_{pc} = (\text{if} \psi \text{goto} l)$の箇所に相当します。これはつまり、このアルゴリズムは、実際のプログラム実行とは異なり、条件分岐において両方の分岐先を勘定するということです。
 
 4.はアルゴリズム中の$\text{if} new < s_{pc'}$と$\text{if} new < s_{l}$の箇所に相当します。ここで、$new, s_{pc'}, s_l$は抽象状態ですが、論文ではそれらの順序関係$<$は以下の条件と等しいとしています:
 
@@ -147,7 +147,7 @@ $$
 論文では、`prog0`に対する上記アルゴリズムのtracingの例として以下の表を載せています:
 ![tracing example](https://raw.githubusercontent.com/aviatesk/aviatesk-zenn-content/master/articles/data-flow-problem-20201025-assets/tracing-example.png)
 
-最終的な状態$s_8$において、プログラム中にない「`r`が定数`5`である」という情報が現れているのが分かると思います。
+最終的な状態$s_8$において、`prog0`中にない「`r`が定数`5`である」という情報が現れているのが分かると思います。
 
 ## 実装
 
@@ -233,7 +233,7 @@ show(io::IO, ::BotElement) = print(io, '⊥')
 
 # NOTE: == and < are defined such that future LatticeElements only need to implement ≤
 ==(x::LatticeElement, y::LatticeElement) = x≤y && y≤x
-<(x::LatticeElement, y::LatticeElement) = x≤y && !(y≤x)
+<(x::LatticeElement,  y::LatticeElement) = x≤y && !(y≤x)
 
 # join
 ⊔(x::LatticeElement, y::LatticeElement) = x≤y ? y : y≤x ? x : ⊤
@@ -285,21 +285,23 @@ abstract_eval(x::Sym, s::AbstractState) = get(s, x.name, ⊥)
 function abstract_eval(x::Call, s::AbstractState)
     f = getfield(@__MODULE__, x.head.name)
 
-    to_val(x::Num)   = x.val
-    to_val(x::Const) = x.val
     argvals = Int[]
     for arg in x.args
         arg = abstract_eval(arg, s)
-        arg === ⊥ && return ⊥
-        push!(argvals, to_val(arg))
+        arg === ⊥ && return ⊥ # bail out if any of call arguments is non-constant
+        push!(argvals, unwrap_val(arg))
     end
 
     return Const(f(argvals...))
 end
+
+# unwrap our lattice representation into actual Julia value
+unwrap_val(x::Num)   = x.val
+unwrap_val(x::Const) = x.val
 ```
 
 ```
-abstract_eval (generic function with 3 methods)
+unwrap_val (generic function with 2 methods)
 ```
 
 
@@ -520,8 +522,8 @@ max_fixed_point(prog0, a₀, abstract_eval)
 
 [^3]: ちなみにerrataなどは出ていません。
 
-まず、先ほど紹介したtrace例は実は不完全であり、実際にアルゴリズムを動かすと、表で空欄になっている左から11行目上から5行目で$s_3$の状態が$s_8$にも伝播しているはずで、$s_8 := \text{x}/1 \text{y}/2 \text{z}/3 \text{r}/\top$となっています。
-そうすると、左から11行目上から10行目で$s_8 < s_7$が成り立たず$s_7$の状態が$s_8$へ伝播せず、そのまま$W$が空となりアルゴリズムは停止します(i.e. この記事の実装でいうと`new < s[pc´+1]`が`false`となります)。
+まず、先ほど紹介したtrace例は実は不完全であり、実際にアルゴリズムを動かすと、表で空欄になっている左から11行目上から5行目で`I₃ = goto I₈`の状態$s_3$が`I₈ = if x < 10 goto I₄`の状態$s_8$にも伝播しているはずで、$s_8 := \text{x}/1 \text{y}/2 \text{z}/3 \text{r}/\top$となっています。
+そうすると、左から11行目上から10行目で`I₇ = x := x + 1`の状態$s_7$を$s_8$へ伝播させるための条件$s_8 < s_7$が成り立たず、そのまま$W$が空となりアルゴリズムは停止します(i.e. この記事の実装でいうと`new < s[pc´+1]`が`false`となります)。
 
 上の実装は論文に忠実に従っているので、以上で説明した挙動の通りにアルゴリズムが停止してしまいます。さぁ困った。
 
@@ -537,7 +539,7 @@ max_fixed_point(prog0, a₀, abstract_eval)
 2. 一方で、アルゴリズムの停止性を保つために、$new$の変更は、**新しい状態が前状態よりもlattice $L$において低い位置にいくように**、伝播される必要がある
 
 これらをコードに落とし込むと次のようになります:
-1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceをそのまま用いる
+1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceを用いる
 2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、常に更新後の状態が更新前の状態よりも$L$において低い位置にいくようにする
 
 というわけで`max_fixed_point`に以下のdiffをあてましょう:
@@ -652,9 +654,9 @@ part 1.がJuliaの型推論プロセスのコアとなるルーチンで、こ�
 
 ### まず試してみる
 
-まずは`prog0`に対応するJulia programを作って、型推論を走らせてみましょう。Juliaの型推論はdata-flow analysisによりJuliaプログラムの型付けを行うことを目的としていますが、推論の精度を高めるために定数伝播も行います。もしJuliaの型推論ルーチンが正しく動くならば推論の結果に「`r`が定数`5`である」という情報が現れているはずです。
+まずは`prog0`に対応するJuliaコードを作って、型推論を走らせてみましょう。Juliaの型推論はdata-flow analysisによりJuliaコードの型付けを行うことを目的としていますが、推論の精度を高めるために定数伝播も行います。もしJuliaの型推論ルーチンが正しく動くならば推論の結果に「`r`が定数`5`である」という情報が現れているはずです。
 
-`prog0`をJuliaプログラムとしてそのまま表現すると以下のようになると思います:
+`prog0`をJuliaコードとしてそのまま表現すると以下のようになると思います:
 ```julia
 begin
     begin
@@ -677,7 +679,7 @@ end
 # generate valid Julia code from the "`Instr` syntax"
 macro prog′(blk)
     prog′ = Expr(:block)
-    bns = [gensym(Symbol(:label, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
+    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
 
     for (i,x) in enumerate(filter(!islnn, blk.args))
         x = MacroTools.postwalk(x) do x
@@ -710,42 +712,40 @@ end
 ```
 quote
     begin
-        $(Expr(:symboliclabel, Symbol("#204###label0#249")))
-        var"#216#x" = 1
+        $(Expr(:symboliclabel, Symbol("#198###instruction0#249")))
+        var"#210#x" = 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#205###label1#250")))
-        var"#213#y" = 2
+        $(Expr(:symboliclabel, Symbol("#199###instruction1#250")))
+        var"#207#y" = 2
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#206###label2#251")))
-        var"#214#z" = 3
+        $(Expr(:symboliclabel, Symbol("#200###instruction2#251")))
+        var"#208#z" = 3
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#207###label3#252")))
-        $(Expr(:symbolicgoto, Symbol("#208###label8#257")))
+        $(Expr(:symboliclabel, Symbol("#201###instruction3#252")))
+        $(Expr(:symbolicgoto, Symbol("#202###instruction8#257")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#209###label4#253")))
-        var"#215#r" = var"#213#y" + var"#214#z"
+        $(Expr(:symboliclabel, Symbol("#203###instruction4#253")))
+        var"#209#r" = var"#207#y" + var"#208#z"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#210###label5#254")))
-        var"#216#x" ≤ var"#214#z" && $(Expr(:symbolicgoto, Symbol("#211###l
-abel7#256")))
+        $(Expr(:symboliclabel, Symbol("#204###instruction5#254")))
+        var"#210#x" ≤ var"#208#z" && $(Expr(:symbolicgoto, Symbol("#205###instruction7#256")))
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#212###label6#255")))
-        var"#215#r" = var"#214#z" + var"#213#y"
+        $(Expr(:symboliclabel, Symbol("#206###instruction6#255")))
+        var"#209#r" = var"#208#z" + var"#207#y"
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#211###label7#256")))
-        var"#216#x" = var"#216#x" + 1
+        $(Expr(:symboliclabel, Symbol("#205###instruction7#256")))
+        var"#210#x" = var"#210#x" + 1
     end
     begin
-        $(Expr(:symboliclabel, Symbol("#208###label8#257")))
-        var"#216#x" < 10 && $(Expr(:symbolicgoto, Symbol("#209###label4#253
-")))
+        $(Expr(:symboliclabel, Symbol("#202###instruction8#257")))
+        var"#210#x" < 10 && $(Expr(:symbolicgoto, Symbol("#203###instruction4#253")))
     end
 end
 ```
@@ -790,9 +790,7 @@ CodeInfo(
 6 ┄ %12 = (x < 10)::Bool
 └──       goto #8 if not %12
 7 ─       goto #2
-8 ─ %15 = Core.tuple(x, y::Core.Const(2), z::Core.Const(3), r::Core.Const(5
-))::Core.PartialStruct(NTuple{4, Int64}, Any[Int64, Core.Const(2), Core.Con
-st(3), Core.Const(5)])
+8 ─ %15 = Core.tuple(x, y::Core.Const(2), z::Core.Const(3), r::Core.Const(5))::Core.PartialStruct(NTuple{4, Int64}, Any[Int64, Core.Const(2), Core.Const(3), Core.Const(5)])
 └──       return %15
 ) => NTuple{4, Int64}
 ```
@@ -832,11 +830,11 @@ end
 
 ### Juliaの型推論の実装での修正を確認する
 
-どうやらJuliaの型推論ルーチンも論文の間違いを修正しているようです。実際のコードを見て確認してみましょう。
+どうやらJuliaの型推論ルーチンも論文のアルゴリズムを修正しているようです。実際のコードを見て確認してみましょう。
 
 先ほどの修正点に対応する箇所を紹介します:
 > これらをコードに落とし込むと次のようになります:
-> 1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceをそのまま用いる
+> 1. 「伝播する先の抽象状態を変化させるかどうか」の判定に、状態同士のequivalenceを用いる
 > 2. 状態の更新に、`⊓`(meet: 最大下界を計算)を用いて、更新後の状態が更新前の状態よりも常に$L$の低い位置にいくようにする
 
 :::message
@@ -898,7 +896,7 @@ end
 
 
 
-やや複雑ですが、どうやら`schanged`が状態の更新をするかどうかの判定を行っているようです。`schanged`はこのように実装されています:
+どうやら`schanged`が状態の更新をするかどうかの判定を行っているようです。`schanged`はこのように実装されています:
 
 > https://github.com/JuliaLang/julia/blob/d474c98667db0bf4832e4eeb7beb0e8cfc8b7481/base/compiler/typelattice.jl#L236
 ```julia

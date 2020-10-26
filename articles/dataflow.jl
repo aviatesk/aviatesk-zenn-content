@@ -67,13 +67,13 @@ show(io::IO, ::TopElement) = print(io, '⊤')
 show(io::IO, ::BotElement) = print(io, '⊥')
 
 ≤(x::LatticeElement, y::LatticeElement) = x≡y
-≤(::BotElement,      ::TopElement) = true
-≤(::BotElement,      ::LatticeElement) = true
-≤(::LatticeElement,  ::TopElement) = true
+≤(::BotElement,      ::TopElement)      = true
+≤(::BotElement,      ::LatticeElement)  = true
+≤(::LatticeElement,  ::TopElement)      = true
 
 # NOTE: == and < are defined such that future LatticeElements only need to implement ≤
 ==(x::LatticeElement, y::LatticeElement) = x≤y && y≤x
-<(x::LatticeElement, y::LatticeElement) = x≤y && !(y≤x)
+<(x::LatticeElement,  y::LatticeElement) = x≤y && !(y≤x)
 
 # join
 ⊔(x::LatticeElement, y::LatticeElement) = x≤y ? y : y≤x ? x : ⊤
@@ -95,8 +95,8 @@ const AbstractState = Dict{Symbol,LatticeElement}
 
 <(X::AbstractState, Y::AbstractState) = X⊓Y==X && X≠Y
 
-# Part 3: abstract semantic
-# -------------------------
+# Part 3: abstract semantics ![.!]
+# --------------------------------
 
 abstract_eval(x::Num, s::AbstractState) = Const(x.val)
 
@@ -105,20 +105,22 @@ abstract_eval(x::Sym, s::AbstractState) = get(s, x.name, ⊥)
 function abstract_eval(x::Call, s::AbstractState)
     f = getfield(@__MODULE__, x.head.name)
 
-    to_val(x::Num)   = x.val
-    to_val(x::Const) = x.val
     argvals = Int[]
     for arg in x.args
         arg = abstract_eval(arg, s)
-        arg === ⊥ && return ⊥
-        push!(argvals, to_val(arg))
+        arg === ⊥ && return ⊥ # bail out if any of call arguments is non-constant
+        push!(argvals, unwrap_val(arg))
     end
 
     return Const(f(argvals...))
 end
 
-# Part 4: initial state
-# ---------------------
+# unwrap our lattice representation into actual Julia value
+unwrap_val(x::Num)   = x.val
+unwrap_val(x::Const) = x.val
+
+# Part 4: initial state a₀
+# ------------------------
 
 a₀ = AbstractState(:x => ⊤, :y => ⊤, :z => ⊤, :r => ⊤)
 
@@ -289,7 +291,7 @@ max_fixed_point(prog0, a₀, abstract_eval) # The solution contains the `:r => C
 # generate valid Julia code from the "`Instr` syntax"
 macro prog′(blk)
     prog′ = Expr(:block)
-    bns = [gensym(Symbol(:label, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
+    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
 
     for (i,x) in enumerate(filter(!islnn, blk.args))
         x = MacroTools.postwalk(x) do x
