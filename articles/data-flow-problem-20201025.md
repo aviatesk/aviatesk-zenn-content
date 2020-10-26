@@ -907,6 +907,25 @@ end
 
 この記事と違って抽象状態$A$を比較するのではなく、各変数の抽象値$C$(この記事の`LatticeElement`に相当)を比較していますが、やはり$L$の要素の順序関係ではなくequivalence(`(n !== o)`)を用いて判定を行っているのが分かると思います。
 
+:::details 厳密に言うと...
+> やはり$L$の要素の順序関係ではなくequivalence(`(n !== o)`)を用いて判定を行っている
+
+という記述は厳密には正しくありません。
+
+`schanged`の中に`!issubstate(n, o)`という条件があるのに気が付いた方もいるかもしれません。
+
+> https://github.com/JuliaLang/julia/blob/d474c98667db0bf4832e4eeb7beb0e8cfc8b7481/base/compiler/typelattice.jl#L224
+```julia
+issubstate(a::VarState, b::VarState) = (a.typ ⊑ b.typ && a.undef <= b.undef)
+```
+
+
+
+[`⊑`](https://github.com/JuliaLang/julia/blob/d474c98667db0bf4832e4eeb7beb0e8cfc8b7481/base/compiler/typelattice.jl#L115-L186)はJuliaのtype latticeにおける半順序関係を計算します。つまり、`!issubstate(n, o)`は「更新後の状態が更新前の状態よりもlatticeにおいて低く**ない**位置にある場合にのみ状態を更新する」ようにしているということです。
+
+これをこの記事の実装に当てはめてみると、`new < s[pc´+1]`の代わりに`!(new ≥ s[pc´+1])`という条件を用いることを意味します。ややこしいですが、Juliaの型推論は抽象状態が更新される方向がこの記事のconstant folding propagationと逆向きなので、不等号の向きが逆になっていることに注意してください。
+:::
+
 #### 修正2. 状態の更新の修正
 
 抽象値の更新は`smerge`が行っているようです:
