@@ -60,9 +60,9 @@ constant folding propagationは、コンパイル時に分かる定数をでき�
 #### 問題設定 1. プログラム $P$
 
 以下では簡単のため、プログラム$P$は整数に対する演算のみを行うものとし、$\text{Instr}$としては以下の3つのみを考えることにします:
-- conditional branching: `condition && goto instruction`
-- unconditional branching: `goto instruction`
 - assignment: `lhs := rhs`
+- unconditional branching: `goto instruction`
+- conditional branching: `condition && goto instruction`
 
 #### 問題設定 2. lattice $L$
 
@@ -80,7 +80,7 @@ $C$の順序関係を次のように定義します: $c_1 \le c_2$ iff a) $c_1 =
 $C$は次の画像のようなフラットなlatticeとなります:
 ![lattice](https://raw.githubusercontent.com/aviatesk/aviatesk-zenn-content/master/articles/data-flow-problem-20201025-assets/lattice.png)
 
-プログラム$P$の各時点における抽象状態$A$は、$X$をプログラム$P$中の変数の集合として、次のようなmapとして表現できます:
+プログラム$P$の各instructionにおける抽象状態$A$は、$X$をプログラム$P$中の変数の集合として、次のようなmapとして表現できます:
 
 $$
     A := X \rightarrow C
@@ -90,14 +90,14 @@ $A$に対する$\sqcup, \sqcap$演算は、$A$中の変数のそれぞれの抽�
 
 #### 問題設定 3. abstract semantics $![.!]$
 
-プログラム$P$のabstract semantics $![.!]$を考えましょう:
-- conditional branching (`condition && goto instruction`): 抽象状態$A$を変化させない
-- unconditional branching (`goto instruction`): 抽象状態$A$を変化させない
+プログラム$P$のabstract semantics $![.!]$を考えましょう。$P$を構成する各instructionはそれぞれの抽象状態に対して次のような作用を与えます:
 - assignment: `lhs := rhs`: `rhs`が定数である時のみその定数値を`lhs`に代入、それ以外の時は$\bot$を代入
+- unconditional branching (`goto instruction`): 抽象状態を変化させない
+- conditional branching (`condition && goto instruction`): 抽象状態を変化させない
 
 #### 問題設定 4. プログラムの初期状態 $a_0$
 
-論文ではプログラムの初期状態$a_0$を$\bot$で初期化するとしていますが、おそらく間違いです。直観的な意味からも、プログラムの初期状態では各変数は"non constant due to missing information"と解釈されるべきなので、$\top$で初期化されるべきでしょう:
+論文ではconstant folding propagation problemのプログラムの初期状態$a_0$は$\bot$で初期化するとしていますが、おそらく間違いです。直観的な意味からも、プログラムの初期状態では各変数は"non constant due to missing information"と解釈されるべきなので、$\top$で初期化されるべきでしょう:
 
 $$
     a_0 := X \rightarrow \top
@@ -111,20 +111,20 @@ $$
 ![algorithm](https://raw.githubusercontent.com/aviatesk/aviatesk-zenn-content/master/articles/data-flow-problem-20201025-assets/alrogithm.png)
 
 このアルゴリズムの直観的な理解としては以下のようになります:
-1. プログラム自身がinstruction levelで(abstract semantics $![.!]$を通して)その抽象状態へ作用する
+1. プログラム自身がinstruction levelでabstract semantics $![.!]$を通してその抽象状態に作用する
 2. アルゴリズムは現在のinstruction $I$を示す現在のprogram counter $pc$と、作用が計算されるべき残りのinstruction達(に対応する$pc$)を保持するworking set $W$を更新しながら動作する
-2. 現在のinstruction$I$の抽象状態の変化は、$I$が到達する可能性があるinstruction全てに伝播する
-3. ただし、現在のinstruction$I$の抽象状態の変化は、**伝播する先の抽象状態を変化させる場合にのみ**伝播する
+2. 現在のinstruction$I$の抽象状態は、$I$が到達する可能性があるinstruction全てに伝播する
+3. ただし、現在のinstruction$I$の抽象状態は、**伝播する先のinstructionの抽象状態を変化させる場合にのみ**伝播する
 
-3.はアルゴリズム中の$I_{pc} = (\text{if} \psi \text{goto} l)$の箇所に相当します。これはつまり、このアルゴリズムは、実際のプログラム実行とは異なり、条件分岐において両方の分岐先を勘定するということです。
+3.はアルゴリズム中の$I_{pc} = (\text{if} \psi \text{goto} l)$の箇所に相当します。これはつまり、このアルゴリズムは実際のプログラム実行とは異なり、条件分岐において両方の分岐先を勘定するということです。
 
-4.はアルゴリズム中の$\text{if} new < s_{pc'}$と$\text{if} new < s_{l}$の箇所に相当します。ここで、$new, s_{pc'}, s_l$は抽象状態ですが、論文ではそれらの順序関係$<$は以下の条件と等しいとしています:
+4.はアルゴリズム中の$\text{if} new < s_{pc'}$と$\text{if} new < s_{l}$の箇所に相当します。論文では、「現在のinstructionの抽象状態が伝播先のinstructionの抽象状態を変化させるかどうか」の判定条件に抽象状態$A$のlattice $L$における順序関係$<$を使い、$<$は以下の条件と等しいとしています:
 
 $$
     new < s_{pc'} \equiv (new \sqcap s_{pc'} = new) \land (new \ne s_{pc'})
 $$
 
-現在のinstruction $I$の抽象状態の変化は、この条件が成り立つときにのみ伝播するので、各instructionの抽象状態$A := X \rightarrow C$は、常に$C$がlattice$L$の下側へ遷移するように更新されます。そのため、lattice $L$の高さが有限であればこのアルゴリズムは必ず収束します。
+つまり、現在のinstruction $I$の抽象状態$new$は、それが伝播先のinstructionの状態$s_{pc'}$(あるいはunconditional branching instructionの状態$s_l$)よりもlattice $L$においてより低い位置にあるときにのみ、伝播します。したがって、各instructionの抽象状態$A := X \rightarrow C$は、常に$C$がlattice$L$の下側へのみ遷移するように更新されるため、lattice $L$の高さが有限であればこのアルゴリズムは必ず収束します。
 
 ### example program `prog0` and tracing
 
@@ -679,7 +679,7 @@ end
 # generate valid Julia code from the "`Instr` syntax"
 macro prog′(blk)
     prog′ = Expr(:block)
-    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
+    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # pre-generate labels for all instructions
 
     for (i,x) in enumerate(filter(!islnn, blk.args))
         x = MacroTools.postwalk(x) do x

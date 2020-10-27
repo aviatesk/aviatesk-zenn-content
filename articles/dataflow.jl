@@ -291,7 +291,7 @@ max_fixed_point(prog0, a₀, abstract_eval) # The solution contains the `:r => C
 # generate valid Julia code from the "`Instr` syntax"
 macro prog′(blk)
     prog′ = Expr(:block)
-    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # generate labels for every statement
+    bns = [gensym(Symbol(:instruction, i-1)) for i in 1:length(blk.args)] # pre-generate labels for all instructions
 
     for (i,x) in enumerate(filter(!islnn, blk.args))
         x = MacroTools.postwalk(x) do x
