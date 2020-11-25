@@ -11,7 +11,7 @@ GitHubでは[aviatesk](https://github.com/aviatesk)というハンドルで活�
 
 最近Juliaの型推論システムを借用してJuliaプログラムのソースコードに対する静的な型解析を行うツールの開発[^1]をしているのですが、その過程でJuliaの型推論について、その中でも特に[`isa`](https://docs.julialang.org/en/v1/base/base/#Core.isa)を使って条件分岐した先のブロックにおける推論ついて少し知見ができたので共有します。
 
-[^1]: xref: https://github.com/aviatesk/TypeProfiler.jl, https://github.com/aviatesk/grad-thesis
+[^1]: xref: https://github.com/aviatesk/JET.jl, https://github.com/aviatesk/grad-thesis
 
 
 ## 1. Juliaの型推論のflow-sensitivity
