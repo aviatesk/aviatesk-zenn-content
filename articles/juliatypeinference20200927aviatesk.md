@@ -78,11 +78,11 @@ end
 
 が起きていることを確認したい人は、[Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl)というパッケージを使ってみましょう。
 
-optimize optionをoffにして、`%13  = invoke foo(::Union{Char, Int64, String})::Union{Float64, Int64}`に"descend"すると以下のような出力が得られ、期待通り`foo`内の`sin(a)`において`a`の型が`a::Int`と推論されているのが確認できます:
+`optimize` optionをoffにして、`%13  = invoke foo(::Union{Char, Int64, String})::Union{Float64, Int64}`に"descend"すると以下のような出力が得られ、期待通り`foo`内の`sin(a)`において`a`の型が`a::Int`と推論されているのが確認できます:
 ```julia
 julia> using Cthulhu
 
-julia> descend_code_typed(Tuple{}) do
+julia> descend_code_typed(Tuple{}; optimize = false) do
            s = 0.
            for i in 1:100000
                a = rand((1, '1', "one"))
@@ -121,7 +121,7 @@ CodeInfo(
 
 今回の`foo`ではどうなるのか、`code_typed`の`optimize` optionを`true`(default)にして確認してみましょう:
 ```julia
-julia> code_typed() do
+julia> code_typed(; optimize = true) do
            s = 0.
            for i in 1:100000
                a = rand((1, '1', "one"))
